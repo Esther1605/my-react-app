@@ -1,87 +1,78 @@
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import categories from '../categories';
-
-const schema = z.object({
-  description: z
-    .string()
-    .min(3, { message: 'Description should be at least 3 characters.' })
-    .max(50),
-  amount: z.number().min(0.01).max(100_0000),
-  category: z.enum([...categories] as [string, ...string[]]),
-});
-
-type ExpenseFormData = z.infer<typeof schema>;
+import React, { useState } from 'react';
 
 interface Props {
-  onSubmit: (data: ExpenseFormData) => void;
+  onSubmit: (expense: {
+    description: string;
+    amount: number;
+    category: string;
+  }) => void;
 }
 
 const ExpenseForm = ({ onSubmit }: Props) => {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<ExpenseFormData>({
-    resolver: zodResolver(schema),
-  });
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const expense = {
+      description,
+      amount: parseFloat(amount), // Convert string to number
+      category,
+    };
+
+    // Call the onSubmit prop function
+    onSubmit(expense);
+
+    // Clear the form
+    setDescription('');
+    setAmount('');
+    setCategory('');
+  };
 
   return (
-    <form
-      onSubmit={handleSubmit((data) => {
-        onSubmit(data);
-        reset();
-      })}>
+    <form className="expense-form" onSubmit={handleSubmit}>
       <div className="mb-3">
-        <label htmlFor="description" className="form-label">
-          Description
-        </label>
-
+        <label htmlFor="description">Description</label>
         <input
-          {...register('description')}
-          id="description"
           type="text"
+          id="description"
+          value={description}
           className="form-control"
+          onChange={(e) => setDescription(e.target.value)}
         />
-        {errors.description && (
-          <p className="text-danger">{errors.description.message}</p>
-        )}
       </div>
 
       <div className="mb-3">
-        <label htmlFor="amount" className="form-label">
-          Amount
-        </label>
+        <label htmlFor="amount">Amount</label>
         <input
-          {...register('amount', { valueAsNumber: true })}
-          id="amount"
           type="number"
+          id="amount"
+          value={amount}
           className="form-control"
+          onChange={(e) => setAmount(e.target.value)}
         />
-        {errors.amount && (
-          <p className="text-danger">{errors.amount.message}</p>
-        )}
       </div>
 
       <div className="mb-3">
-        <label htmlFor="category" className="form-label">
-          Category
-        </label>
-        <select {...register('category')} id="category" className="form-select">
-          <option value=""></option>
-          {categories.map((category) => (
-            <option value={category} key={category}>
-              {category}
-            </option>
-          ))}
+        <label htmlFor="category">Category</label>
+        <select
+          className="form-select"
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          id="category">
+          <option value="">Select category</option>
+          <option value="Food">Food</option>
+          <option value="Utilities">Utilities</option>
+          <option value="Health">Health</option>
+          <option value="Entertainment">Entertainment</option>
         </select>
-        {errors.category && (
-          <p className="text-danger">{errors.category.message}</p>
-        )}
       </div>
-      <button className="btn btn-primary">Submit</button>
+
+      <button className="btn btn-primary mt-3" type="submit">
+        Add Expense
+      </button>
     </form>
   );
 };
